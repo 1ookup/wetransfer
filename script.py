@@ -25,7 +25,9 @@ def upload(file):
     global PROXY
     global ChunkSize
     ts = Transfer(proxy=PROXY, chunksize=ChunkSize)
-    ts.upload(file)
+    url = ts.upload(file)
+    click.secho("Download URL: {}".format(url), fg="green")
+
 
 @cli.command()
 @click.option('--url', '-u', type=click.STRING, help='download url. eg: https://we.tl/t-XXXXXXX')

@@ -29,20 +29,20 @@ class upload_in_chunks(object):
         first_byte = 0
         self.pbar = tqdm(
             total=self.totalsize, initial=first_byte,
-            unit='iB', unit_scale=True, desc='')
+            unit='iB', unit_scale=True)
 
     def __iter__(self):
         with open(self.filename, 'rb') as file:
             while True:
                 data = file.read(self.chunksize)
                 if not data:
-                    sys.stderr.write("\n")
+                    # sys.stderr.write("\n")
                     break
                 self.readsofar += len(data)
                 percent = self.readsofar * 1e2 / self.totalsize
                 # sys.stderr.write("\r{percent:3.0f}%".format(percent=percent))
-                self.pbar.update(len(data))
                 yield data
+                self.pbar.update(len(data))
             self.pbar.close()
 
     def __len__(self):
