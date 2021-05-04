@@ -106,11 +106,11 @@ class Transfer():
 
     def __headers(self):
         headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) Chrome/83.0.4103.116"
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) Chrome/83.0.4103.116",
         }
         return headers
 
-    def __options(self):
+    def __options(self, isAjax=False):
         options = {
             "verify": False,
             # "proxies": {"https": "socks5://127.0.0.1:7890"},
@@ -120,6 +120,12 @@ class Transfer():
             options["proxies"] = {"https": self.__proxy}
         if self.token_header:
             options["headers"].update(self.token_header)
+        if isAjax:
+            options['headers'].update({
+                "Origin": "https://wetransfer.com",
+                "Referer": "https://wetransfer.com/",
+                "X-Requested-With": "XMLHttpRequest",
+            })
         return options
 
     def __csrf_token(self):
@@ -130,7 +136,7 @@ class Transfer():
         m = re.search('<meta name="csrf-param" content="([\w_]*)" />', resp.text)
         param = m.group(1)
 
-        m = re.search('<meta name="csrf-token" content="([\w_/+=]*)" />', resp.text)
+        m = re.search('<meta name="csrf-token" content="([\w_\-/+=]*)" />', resp.text)
         token = m.group(1)
 
         csrf = {
@@ -150,7 +156,7 @@ class Transfer():
         }
         url = "https://wetransfer.com/api/v4/transfers/link"
         try:
-            resp = self.http.post(url, json=payload, **self.__options())
+            resp = self.http.post(url, json=payload, **self.__options(True))
             resp = resp.json()
             self.tid = resp["id"]
             self.files = resp["files"]
@@ -164,7 +170,7 @@ class Transfer():
             "name": file["name"],
             "size": file["size"]
         }
-        resp = self.http.post(url, json=payload, **self.__options())
+        resp = self.http.post(url, json=payload, **self.__options(True))
         # logger.info(resp.text)
 
         payload = {
@@ -175,7 +181,7 @@ class Transfer():
         url = "https://wetransfer.com/api/v4/transfers/{}/files/{}/part-put-url".format(self.tid, file["id"])
         aws_url = None
         try:
-            resp = self.http.post(url, json=payload, **self.__options())
+            resp = self.http.post(url, json=payload, **self.__options(True))
             aws_url = resp.json()["url"]
         except Exception as e:
             logger.exception(e)
@@ -184,7 +190,7 @@ class Transfer():
 
     def __put_aws(self, aws_url, data=None, file_path=None):
         # resp = self.http.put(aws_url, data=data)
-        resp = self.http.put(aws_url, data=upload_in_chunks(file_path, chunksize=self.chunksize*1024), **self.__options())
+        resp = self.http.put(aws_url, data=upload_in_chunks(file_path, chunksize=self.chunksize*1024), **self.__options(True))
         if resp.status_code == 200:
             return True
         else:
@@ -195,7 +201,7 @@ class Transfer():
         payload = {
             "chunk_count": 1
         }
-        resp = self.http.put(url, json=payload, **self.__options())
+        resp = self.http.put(url, json=payload, **self.__options(True))
         if resp.status_code == 200:
             return True
         else:
@@ -203,7 +209,7 @@ class Transfer():
 
     def __finalize(self):
         url = "https://wetransfer.com/api/v4/transfers/{}/finalize".format(self.tid)
-        resp = self.http.put(url, **self.__options())
+        resp = self.http.put(url, **self.__options(True))
         url = None
         try:
             url = resp.json()["shortened_url"]
@@ -219,7 +225,7 @@ class Transfer():
             logger.warning("url 格式错误")
         tid = m.group(1)
         security_hash = m.group(2)
-        m = re.search('<meta name="csrf-token" content="([\w_/+=]*)" />', resp.text)
+        m = re.search('<meta name="csrf-token" content="([\w_\-/+=]*)" />', resp.text)
         self.token_header = {
             "X-CSRF-Token": m.group(1)
         }
@@ -234,7 +240,7 @@ class Transfer():
             "intent":"entire_transfer",
             "domain_user_id":str(uuid.uuid4())
         }
-        resp = self.http.post(url, json=payload, **self.__options())
+        resp = self.http.post(url, json=payload, **self.__options(True))
         download_url = resp.json()["direct_link"]
         return download_url
 
@@ -257,11 +263,8 @@ class Transfer():
 
 if __name__ == '__main__':
     t = Transfer(proxy="socks5://127.0.0.1:7890")
-    # f = open("/tmp/test.txt")
-    # files = f
 
-    # url = t.upload(file="/tmp/Aweme")
+    # url = t.upload(file="/tmp/xxxxx")
     # logger.info("短连接: {}".format(url))
 
-    # t.download("https://we.tl/t-cWlydYMq3S")
-    t.download("https://we.tl/t-AxtF5hzkAW", "/tmp/a")
+    t.download("https://we.tl/t-xxxxx", "/tmp/a")

@@ -4,6 +4,6 @@ click==7.1.2
 idna==2.10
 loguru==0.5.2
 PySocks==1.7.1
-requests==2.24.0
+requests==2.25.1
 tqdm==4.48.2
 urllib3==1.25.10
